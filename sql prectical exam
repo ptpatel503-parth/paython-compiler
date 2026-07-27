@@ -1,0 +1,607 @@
+CREATE DATABASE IF NOT EXISTS HospitalManagementDB;
+USE HospitalManagementDB;
+
+-- 1. Patients Table
+CREATE TABLE Patients (
+    patient_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    dob DATE NOT NULL,
+    gender ENUM('Male', 'Female', 'Other') NOT NULL,
+    phone_number VARCHAR(15),
+    email VARCHAR(100),
+    address VARCHAR(255),
+    registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Doctors Table (Required for Appointments)
+CREATE TABLE Doctors (
+    doctor_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    specialization VARCHAR(100) NOT NULL,
+    phone VARCHAR(15)
+);
+
+-- 3. Appointments Table (Required for Delete Task)
+CREATE TABLE Appointments (
+    appointment_id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id INT,
+    doctor_id INT,
+    appointment_date DATETIME NOT NULL,
+    status ENUM('Scheduled', 'Completed', 'Cancelled') DEFAULT 'Scheduled',
+    FOREIGN KEY (patient_id) REFERENCES Patients(patient_id) ON DELETE CASCADE,
+    FOREIGN KEY (doctor_id) REFERENCES Doctors(doctor_id) ON DELETE CASCADE
+);
+-- Inserting 10 Patient Records
+INSERT INTO Patients (name, dob, gender, phone_number, email, address, registration_date) VALUES
+('John Doe', '1985-05-12', 'Male', '555-0101', 'john.doe@email.com', '123 Elm St, NY', '2025-01-10'),
+('Jane Smith', '1990-08-22', 'Female', '555-0102', 'jane.smith@email.com', '456 Oak St, CA', '2025-02-15'),
+('Michael Brown', '1973-11-03', 'Male', '555-0103', 'mbrown@email.com', '789 Pine St, TX', '2025-03-20'),
+('Emily Davis', '1995-12-25', 'Female', '555-0104', 'emily.d@email.com', '321 Maple Av, FL', '2025-04-05'),
+('David Wilson', '1968-04-17', 'Male', '555-0105', 'david.w@email.com', '654 Cedar Rd, IL', '2025-05-12'),
+('Sarah Miller', '2000-09-09', 'Female', '555-0106', 'sarah.m@email.com', '987 Birch Dr, WA', '2025-06-01'),
+('James Taylor', '1982-01-30', 'Male', '555-0107', 'james.t@email.com', '147 Spruce St, MI', '2025-07-19'),
+('Linda Anderson', '1955-07-14', 'Female', '555-0108', 'linda.a@email.com', '258 Redwood Ln, OH', '2025-08-24'),
+('Robert Thomas', '1992-03-05', 'Male', '555-0109', 'robert.t@email.com', '369 Walnut St, PA', '2025-09-11'),
+('Patricia Jackson', '1988-10-31', 'Female', '555-0110', 'patricia.j@email.com', '482 Cherry Ct, GA', '2025-10-05');
+
+-- Inserting basic Doctors for reference
+INSERT INTO Doctors (name, specialization, phone) VALUES
+('Dr. Alice Gregory', 'Cardiology', '555-2001'),
+('Dr. Bob Martinez', 'Pediatrics', '555-2002');
+
+-- Inserting Appointments (including one old, cancelled appointment to test deletion)
+INSERT INTO Appointments (patient_id, doctor_id, appointment_date, status) VALUES
+(1, 1, '2026-06-15 10:00:00', 'Scheduled'),
+(2, 2, '2026-06-16 11:30:00', 'Scheduled'),
+-- This next appointment is older than 6 months and marked Cancelled (Based on 2026 current timeline)
+(3, 1, '2025-08-10 09:00:00', 'Cancelled');
+-- Example: Updating Jane Smith's address (Patient ID: 2)
+UPDATE Patients 
+SET address = '777 Ocean Drive, Miami, FL' 
+WHERE patient_id = 2;
+-- Deleting cancelled appointments older than 6 months
+DELETE FROM Appointments 
+WHERE status = 'Cancelled' 
+  AND appointment_date < NOW() - INTERVAL 6 MONTH;
+
+  -- Creating the Doctors Table
+CREATE TABLE IF NOT EXISTS Doctors (
+    doctor_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    specialization VARCHAR(100) NOT NULL,
+    phone_number VARCHAR(15),
+    email VARCHAR(100),
+    available_days VARCHAR(50),
+    consultation_fee DECIMAL(10, 2) NOT NULL
+);
+
+-- Mock Data for Doctors (10 Records for testing)
+INSERT INTO Doctors (name, specialization, phone_number, email, available_days, consultation_fee) VALUES
+('Dr. Arvind Sharma', 'Cardiology', '9876543210', 'arvind.s@hospital.com', 'Mon, Wed, Fri', 1500.00),
+('Dr. Priya Patel', 'Pediatrics', '9876543211', 'priya.p@hospital.com', 'Tue, Thu, Sat', 800.00),
+('Dr. Rajesh Verma', 'Orthopedics', '9876543212', 'rajesh.v@hospital.com', 'Mon, Thu', 1200.00),
+('Dr. Sneha Reddy', 'Dermatology', '9876543213', 'sneha.r@hospital.com', 'Wed, Fri', 950.00),
+('Dr. Amit Mishra', 'Neurology', '9876543214', 'amit.m@hospital.com', 'Mon, Tue, Wed', 2000.00),
+('Dr. Kavita Rao', 'Gynecology', '9876543215', 'kavita.rao@hospital.com', 'Tue, Fri', 1100.00),
+('Dr. Vikas Gupta', 'General Medicine', '9876543216', 'vikas.g@hospital.com', 'Daily', 500.00),
+('Dr. Ananya Iyer', 'Oncology', '9876543217', 'ananya.i@hospital.com', 'Wed, Thu', 2500.00),
+('Dr. Rohan Malhotra', 'Psychiatry', '9876543218', 'rohan.m@hospital.com', 'Mon, Sat', 1300.00),
+('Dr. Meera Nair', 'Ophthalmology', '9876543219', 'meera.n@hospital.com', 'Tue, Thu', 750.00);
+SELECT patient_id, name, registration_date 
+FROM Patients
+WHERE registration_date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+ORDER BY registration_date DESC;
+SELECT patient_id, SUM(total_amount) AS total_paid
+FROM Billings
+GROUP BY patient_id
+ORDER BY total_paid DESC
+LIMIT 5;
+SELECT doctor_id, name, specialization, consultation_fee 
+FROM Doctors
+WHERE consultation_fee > 1000.00
+ORDER BY consultation_fee ASC;
+INSERT INTO Appointments (appointment_id, patient_id, doctor_id, appointment_date, status)
+VALUES
+(1, 101, 3, '2026-07-01', 'Scheduled'),
+(2, 102, 2, '2026-06-20', 'Completed'),
+(3, 103, 3, '2026-07-05', 'Scheduled'),
+(4, 104, 5, '2026-05-18', 'Cancelled'),
+(5, 105, 1, '2026-07-08', 'Scheduled'),
+(6, 106, 4, '2025-04-10', 'Completed'),
+(7, 107, 3, '2026-07-09', 'Scheduled'),
+(8, 108, 2, '2024-03-15', 'Completed'),
+(9, 109, 5, '2026-07-10', 'Scheduled'),
+(10, 110, 3, '2026-07-11', 'Completed');
+INSERT INTO Doctors (doctor_id, doctor_name, specialization)
+VALUES
+(1, 'Dr. Amit Sharma', 'Orthopedics'),
+(2, 'Dr. Neha Patel', 'Cardiology'),
+(3, 'Dr. Rahul Mehta', 'Neurology'),
+(4, 'Dr. Priya Shah', 'Pediatrics'),
+(5, 'Dr. Karan Joshi', 'Cardiology');
+INSERT INTO Patients (patient_id, patient_name, last_visit_date)
+VALUES
+(101, 'Aarav Patel', '2026-07-01'),
+(102, 'Riya Shah', '2026-06-20'),
+(103, 'Vivaan Mehta', '2026-07-05'),
+(104, 'Anaya Joshi', '2026-05-18'),
+(105, 'Krish Patel', '2026-07-08'),
+(106, 'Diya Desai', '2025-04-10'),
+(107, 'Ishaan Shah', '2026-07-09'),
+(108, 'Mira Patel', '2024-03-15'),
+(109, 'Arjun Mehta', '2026-07-10'),
+(110, 'Kiara Joshi', '2026-07-11');
+SELECT *
+FROM Appointments
+WHERE status = 'Scheduled'
+AND doctor_id = 3;
+SELECT *
+FROM Patients
+WHERE NOT last_visit_date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR);
+CREATE TABLE Doctors (
+    doctor_id INT PRIMARY KEY,
+    doctor_name VARCHAR(100),
+    specialization VARCHAR(100),
+    department VARCHAR(100),
+    phone VARCHAR(15)
+);
+
+INSERT INTO Doctors VALUES
+(101,'Dr. Amit Shah','Cardiologist','Cardiology','9876543210'),
+(102,'Dr. Neha Patel','Dermatologist','Dermatology','9876543211'),
+(103,'Dr. Raj Mehta','Neurologist','Neurology','9876543212'),
+(104,'Dr. Pooja Sharma','Orthopedic','Orthopedics','9876543213'),
+(105,'Dr. Karan Desai','Pediatrician','Pediatrics','9876543214'),
+(106,'Dr. Rina Joshi','ENT Specialist','ENT','9876543215'),
+(107,'Dr. Vivek Singh','General Physician','General Medicine','9876543216'),
+(108,'Dr. Sneha Verma','Gynecologist','Gynecology','9876543217'),
+(109,'Dr. Mohit Kumar','Psychiatrist','Psychiatry','9876543218'),
+(110,'Dr. Anjali Gupta','Ophthalmologist','Ophthalmology','9876543219');
+CREATE TABLE Patients (
+    patient_id INT PRIMARY KEY,
+    patient_name VARCHAR(100),
+    age INT,
+    gender VARCHAR(10),
+    phone VARCHAR(15)
+);
+
+INSERT INTO Patients VALUES
+(201,'Rahul Patel',28,'Male','9991111111'),
+(202,'Priya Shah',34,'Female','9991111112'),
+(203,'Rohan Mehta',45,'Male','9991111113'),
+(204,'Kajal Desai',31,'Female','9991111114'),
+(205,'Arjun Singh',50,'Male','9991111115'),
+(206,'Meera Joshi',27,'Female','9991111116'),
+(207,'Nikhil Kumar',39,'Male','9991111117'),
+(208,'Anita Verma',42,'Female','9991111118'),
+(209,'Suresh Patel',60,'Male','9991111119'),
+(210,'Pooja Sharma',23,'Female','9991111120');
+CREATE TABLE Appointments (
+    appointment_id INT PRIMARY KEY,
+    patient_id INT,
+    doctor_id INT,
+    appointment_date DATE,
+    status VARCHAR(20),
+    FOREIGN KEY (patient_id) REFERENCES Patients(patient_id),
+    FOREIGN KEY (doctor_id) REFERENCES Doctors(doctor_id)
+);
+
+INSERT INTO Appointments VALUES
+(301,201,101,'2026-07-01','Completed'),
+(302,202,102,'2026-07-02','Completed'),
+(303,203,103,'2026-07-03','Completed'),
+(304,204,104,'2026-07-04','Pending'),
+(305,205,101,'2026-07-05','Completed'),
+(306,206,105,'2026-07-06','Completed'),
+(307,207,101,'2026-07-07','Completed'),
+(308,208,106,'2026-07-08','Pending'),
+(309,209,103,'2026-07-09','Completed'),
+(310,210,108,'2026-07-10','Completed');
+CREATE TABLE Billing (
+    bill_id INT PRIMARY KEY,
+    patient_id INT,
+    doctor_id INT,
+    department VARCHAR(100),
+    amount DECIMAL(10,2),
+    payment_status VARCHAR(20),
+    FOREIGN KEY (patient_id) REFERENCES Patients(patient_id),
+    FOREIGN KEY (doctor_id) REFERENCES Doctors(doctor_id)
+);
+
+INSERT INTO Billing VALUES
+(401,201,101,'Cardiology',5000,'Paid'),
+(402,202,102,'Dermatology',2500,'Paid'),
+(403,203,103,'Neurology',7000,'Paid'),
+(404,204,104,'Orthopedics',4500,'Pending'),
+(405,205,101,'Cardiology',6000,'Paid'),
+(406,206,105,'Pediatrics',3000,'Paid'),
+(407,207,101,'Cardiology',5500,'Paid'),
+(408,208,106,'ENT',2800,'Pending'),
+(409,209,103,'Neurology',6500,'Paid'),
+(410,210,108,'Gynecology',4000,'Paid');
+SELECT doctor_id,
+       doctor_name,
+       specialization,
+       department
+FROM Doctors
+ORDER BY specialization ASC;
+SELECT
+    d.doctor_id,
+    d.doctor_name,
+    COUNT(a.patient_id) AS total_patients
+FROM Doctors d
+LEFT JOIN Appointments a
+ON d.doctor_id = a.doctor_id
+GROUP BY d.doctor_id, d.doctor_name
+ORDER BY total_patients DESC;
+SELECT
+    department,
+    SUM(amount) AS total_revenue
+FROM Billing
+WHERE payment_status='Paid'
+GROUP BY department
+ORDER BY total_revenue DESC;
+
+INSERT INTO Doctors (doctor_id, doctor_name, specialization, department_id, phone, email)
+VALUES
+(101, 'Dr. Amit Sharma', 'Cardiologist', 1, '9876500001', 'amit@gmail.com'),
+(102, 'Dr. Neha Patel', 'Dermatologist', 2, '9876500002', 'neha@gmail.com'),
+(103, 'Dr. Raj Mehta', 'Neurologist', 3, '9876500003', 'raj@gmail.com'),
+(104, 'Dr. Priya Shah', 'Orthopedic', 4, '9876500004', 'priya@gmail.com'),
+(105, 'Dr. Vivek Joshi', 'Pediatrician', 5, '9876500005', 'vivek@gmail.com'),
+(106, 'Dr. Anjali Desai', 'Gynecologist', 6, '9876500006', 'anjali@gmail.com'),
+(107, 'Dr. Rohit Kumar', 'ENT Specialist', 7, '9876500007', 'rohit@gmail.com'),
+(108, 'Dr. Sneha Verma', 'Ophthalmologist', 8, '9876500008', 'sneha@gmail.com'),
+(109, 'Dr. Karan Singh', 'Psychiatrist', 9, '9876500009', 'karan@gmail.com'),
+(110, 'Dr. Mehul Patel', 'General Physician', 10, '9876500010', 'mehul@gmail.com');
+INSERT INTO Patients (patient_id, patient_name, gender, age, phone)
+VALUES
+(201,'Ramesh Patel','Male',45,'9000000001'),
+(202,'Suresh Shah','Male',30,'9000000002'),
+(203,'Kiran Joshi','Female',27,'9000000003'),
+(204,'Meena Patel','Female',40,'9000000004'),
+(205,'Rahul Mehta','Male',35,'9000000005'),
+(206,'Nisha Shah','Female',22,'9000000006'),
+(207,'Arjun Singh','Male',50,'9000000007'),
+(208,'Pooja Patel','Female',29,'9000000008'),
+(209,'Amit Kumar','Male',60,'9000000009'),
+(210,'Divya Sharma','Female',32,'9000000010');
+INSERT INTO Departments (department_id, department_name)
+VALUES
+(1,'Cardiology'),
+(2,'Dermatology'),
+(3,'Neurology'),
+(4,'Orthopedics'),
+(5,'Pediatrics'),
+(6,'Gynecology'),
+(7,'ENT'),
+(8,'Ophthalmology'),
+(9,'Psychiatry'),
+(10,'General Medicine');
+INSERT INTO Appointments (appointment_id, patient_id, doctor_id, appointment_date)
+VALUES
+(301,201,101,'2025-01-05'),
+(302,202,102,'2025-01-06'),
+(303,203,103,'2025-01-07'),
+(304,204,104,'2025-01-08'),
+(305,205,105,'2025-01-09'),
+(306,206,106,'2025-01-10'),
+(307,207,107,'2025-01-11'),
+(308,208,108,'2025-01-12'),
+(309,209,109,'2025-01-13'),
+(310,210,110,'2025-01-14');
+INSERT INTO Billing (bill_id, patient_id, amount, payment_status)
+VALUES
+(401,201,5000,'Paid'),
+(402,202,2500,'Paid'),
+(403,203,4200,'Pending'),
+(404,204,3500,'Paid'),
+(405,205,6200,'Paid'),
+(406,206,4800,'Pending'),
+(407,207,5300,'Paid'),
+(408,208,2700,'Paid'),
+(409,209,3900,'Pending'),
+(410,210,3100,'Paid');
+SELECT doctor_id,
+       doctor_name,
+       specialization
+FROM Doctors
+ORDER BY specialization ASC;
+SELECT
+    d.doctor_id,
+    d.doctor_name,
+    COUNT(a.patient_id) AS Total_Patients
+FROM Doctors d
+LEFT JOIN Appointments a
+ON d.doctor_id = a.doctor_id
+GROUP BY d.doctor_id, d.doctor_name
+ORDER BY Total_Patients DESC;
+SELECT
+    dep.department_name,
+    SUM(b.amount) AS Total_Revenue
+FROM Billing b
+JOIN Patients p
+ON b.patient_id = p.patient_id
+JOIN Appointments a
+ON p.patient_id = a.patient_id
+JOIN Doctors d
+ON a.doctor_id = d.doctor_id
+JOIN Departments dep
+ON d.department_id = dep.department_id
+GROUP BY dep.department_name
+ORDER BY Total_Revenue DESC;
+CREATE TABLE Billing (
+    invoice_id INT PRIMARY KEY,
+    patient_id INT,
+    appointment_id INT,
+    amount DECIMAL(10,2),
+    payment_status VARCHAR(20),
+    payment_date DATE,
+    FOREIGN KEY (patient_id) REFERENCES Patients(patient_id),
+    FOREIGN KEY (appointment_id) REFERENCES Appointments(appointment_id)
+);
+INSERT INTO Billing
+(invoice_id, patient_id, appointment_id, amount, payment_status, payment_date)
+VALUES
+(501, 101, 201, 500.00, 'Paid', '2025-07-01'),
+(502, 102, 202, 800.00, 'Paid', '2025-07-02'),
+(503, 103, 203, 600.00, 'Pending', NULL),
+(504, 104, 204, 700.00, 'Paid', '2025-07-03'),
+(505, 105, 205, 1000.00, 'Cancelled', NULL),
+(506, 106, 206, 900.00, 'Paid', '2025-07-04'),
+(507, 107, 207, 550.00, 'Paid', '2025-07-05'),
+(508, 108, 208, 650.00, 'Pending', NULL),
+(509, 109, 209, 1200.00, 'Paid', '2025-07-06'),
+(510, 110, 210, 750.00, 'Paid', '2025-07-07');
+SELECT SUM(amount) AS Total_Revenue
+FROM Billing
+WHERE payment_status = 'Paid';
+SELECT doctor_id,
+COUNT(*) AS Total_Visits
+FROM Appointments
+GROUP BY doctor_id
+ORDER BY Total_Visits DESC
+LIMIT 1;
+SELECT AVG(amount) AS Average_Consultation_Fee
+FROM Billing
+WHERE payment_status = 'Paid';
+SELECT COUNT(*) AS Total_Bills
+FROM Billing;
+SELECT MAX(amount) AS Highest_Bill
+FROM Billing;
+SELECT MIN(amount) AS Lowest_Bill
+FROM Billing;
+SELECT COUNT(*) AS Paid_Bills
+FROM Billing
+WHERE payment_status='Paid';
+CREATE TABLE Departments (
+    department_id INT PRIMARY KEY,
+    department_name VARCHAR(100) NOT NULL
+);
+INSERT INTO Departments (department_id, department_name) VALUES
+(1, 'Cardiology'),
+(2, 'Neurology'),
+(3, 'Orthopedics'),
+(4, 'Pediatrics'),
+(5, 'Dermatology'),
+(6, 'Gynecology'),
+(7, 'Oncology'),
+(8, 'ENT'),
+(9, 'General Medicine'),
+(10, 'Radiology');
+SELECT * FROM Departments;
+SELECT
+    d.doctor_id,
+    d.doctor_name,
+    dep.department_name
+FROM Doctors d
+INNER JOIN Doctor_Department dd
+ON d.doctor_id = dd.doctor_id
+INNER JOIN Departments dep
+ON dd.department_id = dep.department_id;
+SELECT
+    p.patient_id,
+    p.patient_name,
+    a.appointment_id,
+    a.status
+FROM Patients p
+LEFT JOIN Appointments a
+ON p.patient_id = a.patient_id
+WHERE a.status = 'Completed';
+SELECT
+    b.bill_id,
+    b.payment_status,
+    a.appointment_id,
+    a.patient_id
+FROM Billing b
+RIGHT JOIN Appointments a
+ON b.appointment_id = a.appointment_id
+WHERE b.bill_id IS NULL;
+SELECT
+    p.patient_id,
+    p.patient_name
+FROM Patients p
+LEFT JOIN Appointments a
+ON p.patient_id = a.patient_id
+WHERE a.patient_id IS NULL
+
+UNION
+
+SELECT
+    p.patient_id,
+    p.patient_name
+FROM Appointments a
+RIGHT JOIN Patients p
+ON a.patient_id = p.patient_id
+WHERE a.patient_id IS NULL;
+SELECT doctor_id, doctor_name
+FROM Doctors
+WHERE doctor_id IN (
+    SELECT doctor_id
+    FROM Appointments
+    GROUP BY doctor_id
+    HAVING COUNT(DISTINCT patient_id) > 50
+);
+SELECT patient_id, patient_name
+FROM Patients
+WHERE patient_id = (
+    SELECT patient_id
+    FROM Billing
+    GROUP BY patient_id
+    ORDER BY SUM(total_amount) DESC
+    LIMIT 1
+);
+SELECT *
+FROM Appointments
+WHERE doctor_id IN (
+    SELECT doctor_id
+    FROM Doctors
+    WHERE specialization = 'Dermatology'
+);
+SELECT 
+    MONTH(appointment_date) AS Month_Number,
+    MONTHNAME(appointment_date) AS Month_Name,
+    COUNT(*) AS Total_Visits
+FROM Appointments
+GROUP BY MONTH(appointment_date), MONTHNAME(appointment_date)
+ORDER BY Month_Number;
+CREATE TABLE Admissions (
+    admission_id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id INT,
+    admission_date DATE,
+    discharge_date DATE,
+    FOREIGN KEY (patient_id) REFERENCES Patients(patient_id)
+);
+INSERT INTO Admissions (patient_id, admission_date, discharge_date)
+VALUES
+(1, '2026-06-01', '2026-06-05'),
+(2, '2026-06-10', '2026-06-15'),
+(3, '2026-06-12', '2026-06-20');
+SELECT
+    patient_id,
+    admission_date,
+    discharge_date,
+    DATEDIFF(discharge_date, admission_date) AS Stay_Duration_Days
+FROM Admissions;
+CREATE TABLE Treatments (
+    treatment_id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id INT,
+    doctor_id INT,
+    treatment_date DATE,
+    treatment_name VARCHAR(100),
+    cost DECIMAL(10,2),
+    FOREIGN KEY (patient_id) REFERENCES Patients(patient_id),
+    FOREIGN KEY (doctor_id) REFERENCES Doctors(doctor_id)
+);
+INSERT INTO Treatments (patient_id, doctor_id, treatment_date, treatment_name, cost)
+VALUES
+(1, 1, '2026-06-15', 'Heart Checkup', 2500),
+(2, 2, '2026-06-16', 'Vaccination', 1200),
+(3, 1, '2026-06-20', 'ECG Test', 1800);
+SELECT
+    treatment_id,
+    patient_id,
+    treatment_name,
+    DATE_FORMAT(treatment_date, '%d-%m-%Y') AS Formatted_Treatment_Date
+FROM Treatments;
+-- If your column name is 'name'
+SELECT UPPER(name) AS patient_name FROM Patients;
+
+-- If your column name is 'patient_name'
+SELECT UPPER(patient_name) AS patient_name FROM Patients;
+-- If your column name is 'name'
+UPDATE Patients 
+SET name = UPPER(name);
+
+-- If your column name is 'patient_name'
+UPDATE Patients 
+SET patient_name = UPPER(patient_name);
+-- If your column name is 'name'
+SELECT TRIM(name) AS doctor_name FROM Doctors;
+
+-- If your column name is 'doctor_name'
+SELECT TRIM(doctor_name) AS doctor_name FROM Doctors;
+-- Handles NULL values using COALESCE
+SELECT COALESCE(phone_number, 'Not Available') AS phone_status FROM Patients;
+
+-- Comprehensive approach (Handles both NULL and blank/empty strings)
+SELECT CASE 
+    WHEN phone_number IS NULL OR TRIM(phone_number) = '' THEN 'Not Available' 
+    ELSE phone_number 
+END AS phone_status 
+FROM Patients;
+-- Update only NULL values
+UPDATE Patients 
+SET phone_number = 'Not Available' 
+WHERE phone_number IS NULL;
+
+-- Comprehensive update (Updates NULL values and blank/empty strings)
+UPDATE Patients 
+SET phone_number = 'Not Available' 
+WHERE phone_number IS NULL OR TRIM(phone_number) = '';
+SELECT 
+    d.doctor_id,
+    d.doctor_name,
+    d.specialization,
+    COUNT(a.appointment_id) AS total_patients_treated,
+    DENSE_RANK() OVER (ORDER BY COUNT(a.appointment_id) DESC) AS doctor_rank
+FROM Doctors d
+INNER JOIN Appointments a ON d.doctor_id = a.doctor_id
+WHERE a.status = 'Completed'
+GROUP BY d.doctor_id, d.doctor_name, d.specialization;
+WITH MonthlyRevenue AS (
+    SELECT 
+        DATE_FORMAT(payment_date, '%Y-%m') AS revenue_month,
+        SUM(amount) AS monthly_revenue
+    FROM Billing
+    WHERE payment_status = 'Paid'
+    GROUP BY DATE_FORMAT(payment_date, '%Y-%m')
+)
+SELECT 
+    revenue_month,
+    monthly_revenue,
+    SUM(monthly_revenue) OVER (ORDER BY revenue_month) AS cumulative_revenue
+FROM MonthlyRevenue;
+WITH DailyAppointments AS (
+    SELECT 
+        DATE(appointment_date) AS app_date,
+        COUNT(*) AS daily_appointments_count
+    FROM Appointments
+    GROUP BY DATE(appointment_date)
+)
+SELECT 
+    app_date,
+    daily_appointments_count,
+    SUM(daily_appointments_count) OVER (ORDER BY app_date) AS running_total_appointments
+FROM DailyAppointments;
+SELECT 
+    appointment_id,
+    patient_id,
+    doctor_id,
+    appointment_date,
+    status,
+    COUNT(*) OVER (ORDER BY appointment_date ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS running_total
+FROM Appointments;
+SELECT 
+    p.patient_id,
+    p.patient_name,
+    COUNT(t.treatment_id) AS total_records,
+    CASE 
+        WHEN COUNT(t.treatment_id) > 5 THEN 'High'
+        WHEN COUNT(t.treatment_id) BETWEEN 3 AND 5 THEN 'Medium'
+        ELSE 'Low'
+    END AS Patient_Risk_Level
+FROM Patients p
+LEFT JOIN Treatments t ON p.patient_id = t.patient_id
+GROUP BY p.patient_id, p.patient_name;
+SELECT 
+    doctor_id,
+    doctor_name,
+    specialization,
+    experience_years,
+    CASE 
+        WHEN experience_years > 15 THEN 'Senior'
+        WHEN experience_years BETWEEN 5 AND 15 THEN 'Mid-Level'
+        ELSE 'Junior'
+    END AS Doctor_Category
+FROM Doctors;
